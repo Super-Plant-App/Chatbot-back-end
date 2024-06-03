@@ -1,6 +1,6 @@
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from langchain_openai import OpenAI, ChatOpenAI
 from .CureDB import CureDB
 from langchain.chains.conversation.memory import ConversationBufferMemory
@@ -13,15 +13,24 @@ dotenv.load_dotenv()
 
 class ChatBotModel:
 
-    def __init__(self):
-        self.memory = ConversationBufferMemory()
-        self.llm = ChatOpenAI(temperature=0)
-        self.conversation = ConversationChain(
-            llm=self.llm,
-            verbose=True,
-            memory=self.memory
-        )
+    def __init__(self, user_id: str):
+        self.user_id = user_id
+        self.llm = ChatOpenAI(temperature=0)  
+
+    def __load_chat_history(self):
+        history = []
+        # todo: implement this function 
+        return history
+    
+    def __update_chat_history(self, question, answer):
+        # todo: add the questoin and answer to the history
         pass
+    
+    def __count_tokens(chain, query):
+        encoding = tiktoken.get_encoding("cl100k_base")
+        result = 0
+        # todo: implment this function
+        return result
 
     def getResponseType(self, user_question) -> str:
         template = f"""
@@ -40,10 +49,10 @@ class ChatBotModel:
         ret = llm_chain.run(user_question=user_question)
         return ret
 
-    def generalQuestion(self, user_question):
+    def generalQuestion(self, user_question, history):
         chat = ChatOpenAI(temperature=0)
-        messages = [
-            self.memory,
+        
+        history = history + [
             SystemMessage(
                 content="""
                         You are a helpful AI Plant assistant that answers the questions about Plants and its fields
@@ -53,8 +62,11 @@ class ChatBotModel:
             ),
             HumanMessage(content=user_question),
         ]
-        res = chat(messages).content
-        return res
+
+        aiAnswer = chat(history).content
+
+        self.__update_chat_history(user_question, aiAnswer)
+        return aiAnswer
 
     def other(self):
         return """
@@ -91,11 +103,13 @@ class ChatBotModel:
         )
         llm = OpenAI(temperature=0)
         llm_chain = LLMChain(prompt=prompt, llm=llm)
-        res = llm_chain.run(
+        aiAnswer = llm_chain.run(
             plantName=plantName, diseaseName=diseaseName, cureDocs=cureDocs
         )
 
-        return res
+        self.__update_chat_history(template, aiAnswer)
+
+        return aiAnswer
     
     def summarize(self , text):
         template = f"""
@@ -117,27 +131,16 @@ class ChatBotModel:
 
     """
 
-    def chat(self, user_question):
-        
+    def chat(self, user_question: str):
+        history = self.__load_chat_history()
 
-        # Now you can use the predict method to generate responses
-        response = self.conversation.predict(input=user_question)
-        print(self.conversation.memory)
-        return response
-        
-        # resType = self.getResponseType(user_question)
+        question_type = self.getResponseType(user_question)
 
-        # if resType.strip() == "general question":
-        #     return self.generalQuestion(user_question)
-        
-        # elif resType.strip() == "cure of disease":
-        #     plantName, diseaseName = user_question.split(":")
-        #     cureDocs = self.cureOfDisease(plantName, diseaseName)
-        #     return self.cureResponse(plantName, diseaseName, cureDocs, False)
-        # else:
-        #     return self.other()
-
-    # def count_tokens(chain, query):
-    #     encoding = tiktoken.get_encoding("cl100k_base")
-
-    #     return result
+        if question_type == "general question":
+            return self.generalQuestion(user_question, history)
+        elif question_type == "cure of disease":
+            return self.cureOfDisease(user_question, history)
+        elif question_type == "other":
+            return self.other()
+        else :
+            return "Sorry, I'm an AI plant assistant. How can I assist you with this categories : ['general question', 'cure of disease', 'other']"

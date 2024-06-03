@@ -2,36 +2,18 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from services.chatbot.getCure import getCure
 from services.chatbot.generaleQuestion import generalQuestion
-from services.chatbot.chatbotModel import ChatBotModel
-from contextlib import asynccontextmanager
 
 
-data = {}
+app = FastAPI()
+class UserData(BaseModel):
+    user_id: str
+    user_question: str
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    data['chatbot'] = ChatBotModel()
-    
-    yield
+@app.post('/chatbot/')
+async def chatbot_general(user_data: UserData):
+    user_id = user_data.user_id
+    user_question = user_data.user_question 
 
-    del data['chatbot']
-    
-
-
-app = FastAPI(lifespan=lifespan)
-
-class ChatbotCure(BaseModel):
-    plant: str
-    disease: str
-
-@app.get('/chatbot/general/{question}')
-async def chatbot_general(question: str):
-    answer = generalQuestion(question, data['chatbot'])
+    answer = generalQuestion(user_question, user_id)
     
     return answer
-
-@app.post('/chatbot/cure')
-async def chatbot_cure(question: ChatbotCure):
-    cure = getCure(question.plant, question.disease)
-
-    return f"{question.plant}:{question.disease}"
