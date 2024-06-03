@@ -3,6 +3,9 @@ from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import OpenAI, ChatOpenAI
 from .CureDB import CureDB
+from langchain.chains.conversation.memory import ConversationBufferMemory
+from langchain.chains.conversation.base import ConversationChain
+import tiktoken
 import dotenv
 
 dotenv.load_dotenv()
@@ -11,9 +14,16 @@ dotenv.load_dotenv()
 class ChatBotModel:
 
     def __init__(self):
+        self.memory = ConversationBufferMemory()
+        self.llm = ChatOpenAI(temperature=0)
+        self.conversation = ConversationChain(
+            llm=self.llm,
+            verbose=True,
+            memory=self.memory
+        )
         pass
 
-    def getResponse(self, user_question):
+    def getResponseType(self, user_question) -> str:
         template = f"""
                     You are a plant assistant, and your task is to classify user questions. 
                     Please categorize the following question into one of the categories from this list: {user_question} - ["general question", "cure of disease", "other"].
@@ -33,6 +43,7 @@ class ChatBotModel:
     def generalQuestion(self, user_question):
         chat = ChatOpenAI(temperature=0)
         messages = [
+            self.memory,
             SystemMessage(
                 content="""
                         You are a helpful AI Plant assistant that answers the questions about Plants and its fields
@@ -105,3 +116,28 @@ class ChatBotModel:
     The most suitable treatment for late blight disease in potato plants is a combination of several management practices. The first step is to avoid introducing the disease into the field by using disease-free seed tubers and destroying any cull or volunteer potatoes. Planting resistant varieties can also help to prevent the disease from spreading.\n\nIn terms of cultural practices, it is important to maintain good plant health by providing adequate air circulation and removing old vines after harvest. Chemical control can also be effective, with fungicides such as chlorothalonil and maneb being recommended for preventative use. Resistance to the disease can also be achieved by planting resistant cultivars such as Mountain Fresh, Mountain Supreme, and Plum Dandy.\n\nLate blight is caused by the fungus Phytophthora infestans, which can survive in potato tubers over the winter and be reintroduced into the field through infected seed potatoes or tomato transplants. The disease is favored by cool, moist weather and can spread rapidly, causing severe damage to foliage and tubers.\n\nSymptoms of late blight include pale-green, water-soaked spots on the leaf edges or tips, which can quickly expand and turn purplish, brownish, or blackish in color. Infected tubers will have brown, dry, sun
 
     """
+
+    def chat(self, user_question):
+        
+
+        # Now you can use the predict method to generate responses
+        response = self.conversation.predict(input=user_question)
+        print(self.conversation.memory)
+        return response
+        
+        # resType = self.getResponseType(user_question)
+
+        # if resType.strip() == "general question":
+        #     return self.generalQuestion(user_question)
+        
+        # elif resType.strip() == "cure of disease":
+        #     plantName, diseaseName = user_question.split(":")
+        #     cureDocs = self.cureOfDisease(plantName, diseaseName)
+        #     return self.cureResponse(plantName, diseaseName, cureDocs, False)
+        # else:
+        #     return self.other()
+
+    # def count_tokens(chain, query):
+    #     encoding = tiktoken.get_encoding("cl100k_base")
+
+    #     return result

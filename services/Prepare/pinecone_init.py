@@ -13,7 +13,7 @@ dotenv.load_dotenv()
 # Initialize OpenAI
 openai.api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI()
-MODEL = "text-embedding-3-small"
+MODEL = "text-embedding-3-large"
 namespace = os.getenv('PINECONE_NAMESPACE')
 
 pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
