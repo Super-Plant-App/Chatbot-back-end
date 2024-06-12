@@ -1,2 +1,2 @@
 FastAPI project template:
-https://github.com/tiangolo/full-stack-fastapi-template/blob/master/backend/app/core/db.py
+https://github.com/tiangolo/full-stack-fastapi-template/tree/master/backend

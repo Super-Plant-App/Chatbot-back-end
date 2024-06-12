@@ -2,7 +2,8 @@ from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage, SystemMessage, AIMessage
 from langchain_openai import OpenAI, ChatOpenAI
-from .CureDB import CureDB
+from Models.ChatbotModel import ChatbotModel
+from services.chatbot.CureDB import CureDB
 from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.chains.conversation.base import ConversationChain
 import tiktoken
@@ -11,20 +12,21 @@ import dotenv
 dotenv.load_dotenv()
 
 
-class ChatBotModel:
+class ChatBotController:
 
-    def __init__(self, user_id: str):
+    def __init__(self, user_id: str, chatbotModel: ChatbotModel):
         self.user_id = user_id
-        self.llm = ChatOpenAI(temperature=0)  
+        self.llm = ChatOpenAI(temperature=0)
+        self.chatbotModel = chatbotModel
 
     def __load_chat_history(self):
-        history = []
-        # todo: implement this function 
-        return history
-    
-    def __update_chat_history(self, question, answer):
-        # todo: add the questoin and answer to the history
-        pass
+        return self.chatbotModel.load_history(self.user_id)
+            
+    def __update_chat_history(self, history: list):
+        self.chatbotModel.update_history(history, self.user_id)
+
+    def __clear_chat_history(self):
+        self.chatbotModel.clear_history(self.user_id)
     
     def __count_tokens(chain, query):
         encoding = tiktoken.get_encoding("cl100k_base")
@@ -49,23 +51,31 @@ class ChatBotModel:
         ret = llm_chain.run(user_question=user_question)
         return ret
 
-    def generalQuestion(self, user_question, history):
+    def generalQuestion(self, user_question, history: list):
         chat = ChatOpenAI(temperature=0)
         
-        history = history + [
-            SystemMessage(
-                content="""
-                        You are a helpful AI Plant assistant that answers the questions about Plants and its fields
-                         but any other field outside the plant or the agriculture don't response and say 
-                         Sorry I'm an AI plant assistant.
-                         """
-            ),
-            HumanMessage(content=user_question),
-        ]
+        history = self.__load_chat_history()
+
+        if history is not None and len(history) == 0:
+            history = [
+                SystemMessage(
+                    content="""
+                            You are a helpful AI Plant assistant that answers the questions about Plants and its fields
+                            but any other field outside the plant or the agriculture don't response and say 
+                            Sorry I'm an AI plant assistant.
+                            """
+                ),
+                HumanMessage(content=user_question),
+            ]
+        else:
+            history.append(HumanMessage(content=user_question))
 
         aiAnswer = chat(history).content
 
-        self.__update_chat_history(user_question, aiAnswer)
+        print(aiAnswer)
+
+        self.__update_chat_history(history)
+
         return aiAnswer
 
     def other(self):
@@ -74,7 +84,7 @@ class ChatBotModel:
                 How can I assist you with this categories : ["general question", "cure of disease", "other"]
                 """
 
-    def cureOfDisease(self, plantName, diseaseName):
+    def cureOfDisease(self, plantName, diseaseName, hisotry):
         cure = CureDB()
         matchingPagesContent, bol, total_tokens = cure.getCureDocs(plantName, diseaseName)
         return matchingPagesContent
@@ -142,5 +152,10 @@ class ChatBotModel:
             return self.cureOfDisease(user_question, history)
         elif question_type == "other":
             return self.other()
-        else :
+        else:
             return "Sorry, I'm an AI plant assistant. How can I assist you with this categories : ['general question', 'cure of disease', 'other']"
+
+    def clearHistory(self):
+        self.__clear_chat_history()
+        return "Chat history has been cleared successfully."
+    

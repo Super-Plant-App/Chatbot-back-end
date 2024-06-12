@@ -25,3 +25,9 @@ def init_mongo() -> MongoClient | None:
         return client
     except Exception as e:
         print(e)
+
+# def clear_history(client: MongoClient):
+    # client.drop_database('chatbot')
+    # print("Cleared the chatbot history")
+
+    # return True
