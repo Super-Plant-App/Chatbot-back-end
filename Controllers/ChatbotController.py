@@ -1,11 +1,9 @@
 from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.schema import HumanMessage, SystemMessage, AIMessage
+from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import OpenAI, ChatOpenAI
 from Models.ChatbotModel import ChatbotModel
 from services.chatbot.CureDB import CureDB
-from langchain.chains.conversation.memory import ConversationBufferMemory
-from langchain.chains.conversation.base import ConversationChain
 import tiktoken
 import dotenv
 
@@ -20,9 +18,24 @@ class ChatBotController:
         self.chatbotModel = chatbotModel
 
     def __load_chat_history(self):
-        return self.chatbotModel.load_history(self.user_id)
+        history = self.chatbotModel.load_history(self.user_id)
+
+        messages = []
+        for i, message in enumerate(history):
+            if i % 2 == 0:
+                messages.append(SystemMessage(content=message))
+            else:
+                messages.append(HumanMessage(content=message))
+
+        return messages
+
             
-    def __update_chat_history(self, history: list):
+    def __update_chat_history(self, messages: list):
+        history = []
+
+        for message in messages:
+            history.append(message.content.strip())
+
         self.chatbotModel.update_history(history, self.user_id)
 
     def __clear_chat_history(self):
@@ -45,19 +58,39 @@ class ChatBotController:
                     - If the question is "What is the football? Who is Mohamed Salah?", it should be classified as 'other'.
                     just return the value os a string like 'general question'
                 """
-        prompt = PromptTemplate(template=template, input_variables=["user_question"])
+        prompt = PromptTemplate.from_template(template=template)
+        # question_prompt = prompt.format(user_question)
         llm = OpenAI(temperature=0)
-        llm_chain = LLMChain(prompt=prompt, llm=llm)
-        ret = llm_chain.run(user_question=user_question)
+        LLMChain = LLMChain(llm=llm, prompt=prompt)
+        ret = LLMChain.invoke({"user_question": user_question})
         return ret
-
-    def generalQuestion(self, user_question, history: list):
+    
+    def classifyQuestion(self, user_question) -> str:
         chat = ChatOpenAI(temperature=0)
         
-        history = self.__load_chat_history()
+        messages = [
+            SystemMessage(
+                content=f"""You are a plant assistant. Your task is to categorize user questions into one of the following categories: ["general question", "cure of disease", "other"].
+                Choose "cure of disease" if the message is specifically asking about the cure of a plant disease.
+                Choose "general question" if the message is asking anything about plants, including questions about diseases that do not ask for a cure.
+                Choose "other" if the message is about anything unrelated to plants.
+                Please return only the category as a string, such as 'general question'.
+            """
+            ),
+            HumanMessage(content=user_question),
+        ]
 
-        if history is not None and len(history) == 0:
-            history = [
+        classification = chat(messages).content
+
+        return classification
+
+    def generalQuestion(self, user_question):
+        chat = ChatOpenAI(temperature=0)
+        
+        messages = self.__load_chat_history()
+
+        if messages is not None and len(messages) == 0:
+            messages = [
                 SystemMessage(
                     content="""
                             You are a helpful AI Plant assistant that answers the questions about Plants and its fields
@@ -68,13 +101,13 @@ class ChatBotController:
                 HumanMessage(content=user_question),
             ]
         else:
-            history.append(HumanMessage(content=user_question))
+            messages.append(HumanMessage(content=user_question))
 
-        aiAnswer = chat(history).content
+        aiAnswer = chat(messages).content
 
-        print(aiAnswer)
+        messages.append(SystemMessage(content=aiAnswer))
 
-        self.__update_chat_history(history)
+        self.__update_chat_history(messages)
 
         return aiAnswer
 
@@ -113,7 +146,7 @@ class ChatBotController:
         )
         llm = OpenAI(temperature=0)
         llm_chain = LLMChain(prompt=prompt, llm=llm)
-        aiAnswer = llm_chain.run(
+        aiAnswer = llm_chain.invoke(
             plantName=plantName, diseaseName=diseaseName, cureDocs=cureDocs
         )
 
@@ -131,7 +164,7 @@ class ChatBotController:
                                 )
         llm = OpenAI(temperature=0)
         llmChain = LLMChain(prompt=prompt , llm =llm)
-        res = llmChain.run(
+        res = llmChain.invoke(
             text=text
         )
         return res
@@ -142,14 +175,12 @@ class ChatBotController:
     """
 
     def chat(self, user_question: str):
-        history = self.__load_chat_history()
-
-        question_type = self.getResponseType(user_question)
+        question_type = self.classifyQuestion(user_question)
 
         if question_type == "general question":
-            return self.generalQuestion(user_question, history)
+            return self.generalQuestion(user_question)
         elif question_type == "cure of disease":
-            return self.cureOfDisease(user_question, history)
+            return self.cureOfDisease(user_question)
         elif question_type == "other":
             return self.other()
         else:
