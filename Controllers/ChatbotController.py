@@ -31,9 +31,13 @@ class ChatBotController:
 
             
     def __update_chat_history(self, messages: list):
+        # remove the system message from the history
+        messages.pop(-3)
+
         history = []
 
-        for message in messages:
+        # we will only store the last 8 messages (last 4 user and system messages)
+        for message in messages[-8:]:
             history.append(message.content.strip())
 
         self.chatbotModel.update_history(history, self.user_id)
@@ -41,39 +45,15 @@ class ChatBotController:
     def __clear_chat_history(self):
         self.chatbotModel.clear_history(self.user_id)
     
-    def __count_tokens(chain, query):
-        encoding = tiktoken.get_encoding("cl100k_base")
-        result = 0
-        # todo: implment this function
-        return result
-
-    def getResponseType(self, user_question) -> str:
-        template = f"""
-                    You are a plant assistant, and your task is to classify user questions. 
-                    Please categorize the following question into one of the categories from this list: {user_question} - ["general question", "cure of disease", "other"].
-                    For example:
-                    - If the question is "What is the Apple?","How can I plant a Tomato?", it should be classified as 'general question'.
-                    - If the question is "What is the apple black rot?", it should be classified as 'general question'.
-                    - If the question is "What is the cure of Apple black rot?", it should be classified as 'cure of disease'.
-                    - If the question is "What is the football? Who is Mohamed Salah?", it should be classified as 'other'.
-                    just return the value os a string like 'general question'
-                """
-        prompt = PromptTemplate.from_template(template=template)
-        # question_prompt = prompt.format(user_question)
-        llm = OpenAI(temperature=0)
-        LLMChain = LLMChain(llm=llm, prompt=prompt)
-        ret = LLMChain.invoke({"user_question": user_question})
-        return ret
-    
     def classifyQuestion(self, user_question) -> str:
         chat = ChatOpenAI(temperature=0)
         
         messages = [
             SystemMessage(
-                content=f"""You are a plant assistant. Your task is to categorize user questions into one of the following categories: ["general question", "cure of disease", "other"].
-                Choose "cure of disease" if the message is specifically asking about the cure of a plant disease.
-                Choose "general question" if the message is asking anything about plants, including questions about diseases that do not ask for a cure.
-                Choose "other" if the message is about anything unrelated to plants.
+                content=f"""You are a plant assistant. Your task is to categorize user questions into one of the following categories: ["general question", "plant disease", "other"].
+                Choose "plant disease" if the message is specifically asking about a disease of a plant.
+                Choose "general question" if the message is asking anything about plants.
+                Choose "other" if the message is about a topic unrelated to plants.
                 Please return only the category as a string, such as 'general question'.
             """
             ),
@@ -89,19 +69,16 @@ class ChatBotController:
         
         messages = self.__load_chat_history()
 
-        if messages is not None and len(messages) == 0:
-            messages = [
-                SystemMessage(
-                    content="""
-                            You are a helpful AI Plant assistant that answers the questions about Plants and its fields
-                            but any other field outside the plant or the agriculture don't response and say 
-                            Sorry I'm an AI plant assistant.
-                            """
-                ),
-                HumanMessage(content=user_question),
-            ]
-        else:
-            messages.append(HumanMessage(content=user_question))
+        messages += [
+            SystemMessage(
+                content="""
+                        You are a helpful AI Plant assistant that answers the questions about Plants and its fields
+                        but any other field outside the plant or the agriculture don't response and say 
+                        Sorry I'm an AI plant assistant.
+                        """
+            ),
+            HumanMessage(content=user_question),
+        ]
 
         aiAnswer = chat(messages).content
 
@@ -114,10 +91,10 @@ class ChatBotController:
     def other(self):
         return """
                 Sorry, I'm an AI plant assistant. 
-                How can I assist you with this categories : ["general question", "cure of disease", "other"]
+                How can I assist you with this categories : ["general question", "plant disease", "other"]
                 """
 
-    def cureOfDisease(self, plantName, diseaseName, hisotry):
+    def plantDisease(self, plantName, diseaseName, hisotry):
         cure = CureDB()
         matchingPagesContent, bol, total_tokens = cure.getCureDocs(plantName, diseaseName)
         return matchingPagesContent
@@ -179,12 +156,12 @@ class ChatBotController:
 
         if question_type == "general question":
             return self.generalQuestion(user_question)
-        elif question_type == "cure of disease":
-            return self.cureOfDisease(user_question)
+        elif question_type == "plant disease":
+            return self.plantDisease(user_question)
         elif question_type == "other":
             return self.other()
         else:
-            return "Sorry, I'm an AI plant assistant. How can I assist you with this categories : ['general question', 'cure of disease', 'other']"
+            return "Sorry, I'm an AI plant assistant. How can I assist you with this categories : general question, plant disease, other"
 
     def clearHistory(self):
         self.__clear_chat_history()
