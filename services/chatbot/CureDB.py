@@ -9,7 +9,7 @@ dotenv.load_dotenv()
 
 class CureDB:
     def __init__(self) -> None:
-        self.namespaceName = "book2"
+        self.namespaceName = "book1"
         pass
 
     def __initPinecone(self):
@@ -25,7 +25,7 @@ class CureDB:
         return pinecone, pinecone_index
 
     def __getEmbeddings(
-        self, text: str, model: str = "text-embedding-3-small"
+        self, text: str, model: str = "text-embedding-3-large"
     ) -> list[float]:
         """
         Return the Embeddings of a text
@@ -61,7 +61,7 @@ class CureDB:
 
         return sum_text, self.__calcTokens(sum_text)
 
-    def getCureDocs(self, plantName: str, diseaseName: str, noDocs=2):
+    def getCureDocs(self, plantName: str, diseaseName: str, noDocs=1):
         if diseaseName == "healthy":
             return (
                 "",
@@ -93,4 +93,4 @@ class CureDB:
 
         sum_text, total_tokens = self.__displayDocs(matching_pages_content)
 
-        return sum_text, False, total_tokens
+        return sum_text, total_tokens

@@ -2,9 +2,10 @@ from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import OpenAI, ChatOpenAI
+from langchain.output_parsers import PydanticOutputParser
+from langchain_core.pydantic_v1 import BaseModel, Field, validator
 from Models.ChatbotModel import ChatbotModel
 from services.chatbot.CureDB import CureDB
-import tiktoken
 import dotenv
 
 dotenv.load_dotenv()
@@ -94,10 +95,48 @@ class ChatBotController:
                 How can I assist you with this categories : ["general question", "plant disease", "other"]
                 """
 
-    def plantDisease(self, plantName, diseaseName, hisotry):
+    def __getPlantAndDiseaseNames(self, user_question):
+        model = OpenAI(model_name="gpt-3.5-turbo-instruct", temperature=0.0)
+
+        # Define your desired data structure.
+        class Disease(BaseModel):
+            plant: str = Field(description="name of the plant")
+            disease: str = Field(description="disease of the plant")
+
+
+        # Set up a parser + inject instructions into the prompt template.
+        parser = PydanticOutputParser(pydantic_object=Disease)
+
+        prompt = PromptTemplate(
+            template="Extract the plant name and disease name from the query.\n{format_instructions}\n{query}\n",
+            input_variables=["query"],
+            partial_variables={"format_instructions": parser.get_format_instructions()},
+        )
+
+        # And a query intended to prompt a language model to populate the data structure.
+        prompt_and_model = prompt | model
+        output = prompt_and_model.invoke({"query": user_question})
+        res = parser.invoke(output)
+
+        return res
+
+    def plantDisease(self, user_question):
+        messages = self.__load_chat_history()
+
+        # get the plant name and disease name from the user_question
+        data = self.__getPlantAndDiseaseNames(user_question)
+        plantName = data.plant
+        diseaseName = data.disease
+
         cure = CureDB()
-        matchingPagesContent, bol, total_tokens = cure.getCureDocs(plantName, diseaseName)
-        return matchingPagesContent
+        relatedDocs, _ = cure.getCureDocs(plantName, diseaseName)
+
+        
+        aiAnswer = getDiseaseAnswer(user_question, relatedDocs, history)
+        messages.append(SystemMessage(content=aiAnswer))
+        self.__update_chat_history(messages)
+
+        return aiAnswer
 
     def cureResponse(self, plantName, diseaseName, cureDocs, isHealthy):
         if isHealthy:
