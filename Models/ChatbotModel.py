@@ -22,10 +22,15 @@ class ChatbotModel:
             
             db_name = os.getenv('MONGO_CONNECTION_DB')
             self.db = self.client[db_name]
-        except Exception as e:
-            print(e)
 
-    def load_history(self, user_id: str) -> list | None:
+            # Create an index for the ChatHistory collection to delete after some time
+            # print(self.db['ChatHistory'].create_index( { "expireAt": 1 }, { "expireAfterSeconds": 0 }))
+            self.db['ChatHistory'].create_index('expire', expireAfterSeconds=0)
+
+        except Exception as e:
+            print(f"Error init mongo: {e}")
+
+    def load_history(self, user_id: str) -> list :
         history = []
         
         collection = self.db['ChatHistory']
@@ -37,7 +42,7 @@ class ChatbotModel:
             history = document['history']
             return history
         else:
-            return None
+            return []
 
     def update_history(self, history: list, user_id: str):
         collection = self.db['ChatHistory']
@@ -46,14 +51,14 @@ class ChatbotModel:
         query = {"userId": ObjectId(user_id)}
         document = collection.find_one(query)
 
+        # Calculate new expiration time (1 hour from now)
+        new_expiration_time = datetime.now() + timedelta(seconds= 10)
+
         if document: # if there is a history, update it
-            # Calculate new expiration time (1 hour from now)
-            new_expiration_time = datetime.utcnow() + timedelta(minutes=1)
-            
             update = {
                 "$set": {
                     "history": history,
-                    "expiration_time": new_expiration_time
+                    "expiresAfter_1": new_expiration_time
                 }
             }
             
@@ -66,7 +71,7 @@ class ChatbotModel:
             new_document = {
                 "userId": ObjectId(user_id),
                 "history": history,
-                "expiration_time": datetime.utcnow() + timedelta(minutes=1)
+                "expiresAfter_1": new_expiration_time
             }
 
             insert_result = collection.insert_one(new_document)

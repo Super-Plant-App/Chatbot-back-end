@@ -33,8 +33,6 @@ class ChatBotController:
             
     def __update_chat_history(self, messages: list):
         # remove the system message from the history
-        messages.pop(-3)
-
         history = []
 
         # we will only store the last 8 messages (last 4 user and system messages)
@@ -74,8 +72,7 @@ class ChatBotController:
             SystemMessage(
                 content="""
                         You are a helpful AI Plant assistant that answers the questions about Plants and its fields
-                        but any other field outside the plant or the agriculture don't response and say 
-                        Sorry I'm an AI plant assistant.
+                        Keep your answer length moderate and help user with his question.
                         """
             ),
             HumanMessage(content=user_question),
@@ -85,6 +82,8 @@ class ChatBotController:
 
         messages.append(SystemMessage(content=aiAnswer))
 
+        # remove the template prompt from the messages
+        messages.pop(-3)
         self.__update_chat_history(messages)
 
         return aiAnswer
@@ -96,7 +95,7 @@ class ChatBotController:
                 """
 
     def __getPlantAndDiseaseNames(self, user_question):
-        model = OpenAI(model_name="gpt-3.5-turbo-instruct", temperature=0.0)
+        model = OpenAI(model_name="gpt-3.5-turbo", temperature=0.0, max_tokens=10000)
 
         # Define your desired data structure.
         class Disease(BaseModel):
@@ -119,6 +118,31 @@ class ChatBotController:
         res = parser.invoke(output)
 
         return res
+    
+    def __getDiseaseAnswer(self, relatedDocs, plantName, diseaseName, messages, user_question):
+        chat = ChatOpenAI(temperature=0)
+        
+        messages += [
+            SystemMessage(
+                content=f"""
+                        You are a helpful AI Plant assistant that answers the questions about Plants and its fields.
+                        The user is taking about {plantName} plant and {diseaseName} disease.
+                        You can use Docs to answer the question of user
+
+                        *** 
+                        Docs:
+                        {relatedDocs}
+
+                        """
+            ),
+            HumanMessage(content=user_question),
+        ]
+
+        aiAnswer = chat(messages).content
+
+        messages.append(SystemMessage(content=aiAnswer))
+
+        return aiAnswer, messages
 
     def plantDisease(self, user_question):
         messages = self.__load_chat_history()
@@ -130,10 +154,12 @@ class ChatBotController:
 
         cure = CureDB()
         relatedDocs, _ = cure.getCureDocs(plantName, diseaseName)
-
         
-        aiAnswer = getDiseaseAnswer(user_question, relatedDocs, history)
-        messages.append(SystemMessage(content=aiAnswer))
+        aiAnswer, messages = self.__getDiseaseAnswer(relatedDocs, plantName, diseaseName, messages, user_question)
+
+
+        # remove the template prompt from the messages
+        messages.pop(-3)
         self.__update_chat_history(messages)
 
         return aiAnswer

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from services.chatbot.generaleQuestion import generalQuestion
+from services.chatbot.generaleQuestion import chatbotQuestion
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from Models.ChatbotModel import ChatbotModel
@@ -28,7 +28,7 @@ async def chatbot_general(user_data: UserData):
     user_id = user_data.user_id
     user_question = user_data.user_question 
 
-    answer = generalQuestion(user_question, user_id, chatbotModel)
+    answer = chatbotQuestion(user_question, user_id, chatbotModel)
     
     return answer
 

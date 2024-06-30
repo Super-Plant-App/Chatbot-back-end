@@ -84,6 +84,7 @@ class CureDB:
         # Get relative docs' IDs
         matching_pages_ids = []
         for vec in query_output["matches"]:
+            print(vec)
             matching_pages_ids.append(vec["id"])
 
         # Get relative docs by IDs
