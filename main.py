@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from services.chatbot.generaleQuestion import chatbotAskQuestion, chatbotGetCure
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from contextlib import asynccontextmanager
 from Models.ChatbotModel import ChatbotModel
 
@@ -16,10 +16,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    docs_url="/chatbot/docs",
-    redoc_url=None,
+    docs_url="/chatbot/docs",    # Customize Swagger UI
+    redoc_url="/chatbot/redoc",
     lifespan=lifespan
 )
+# router = APIRouter(prefix="/chatbot")
 
 class UserData(BaseModel):
     user_id: str
