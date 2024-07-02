@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from services.chatbot.generaleQuestion import chatbotQuestion
+from services.chatbot.generaleQuestion import chatbotAskQuestion, chatbotGetCure
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from Models.ChatbotModel import ChatbotModel
@@ -21,23 +21,44 @@ class UserData(BaseModel):
     user_id: str
     user_question: str
 
-@app.post('/chatbot/')
+@app.post('/chatbot/ask-question')
 async def chatbot_general(user_data: UserData):
     chatbotModel = data['chatbotModel']
 
     user_id = user_data.user_id
     user_question = user_data.user_question 
 
-    answer = chatbotQuestion(user_question, user_id, chatbotModel)
+    answer = chatbotAskQuestion(user_question, user_id, chatbotModel)
     
     return answer
 
-# @app.post('/chatbot/clearHistory')
-# async def chatbot_general(user_data: UserData):
-#     client = data['mongo_client']
+class DiseaseData(BaseModel):
+    plantName: str
+    diseaseName: str
+    user_id: str
 
-#     user_id = user_data.user_id
+@app.post('/chatbot/get-cure')
+async def chatbot_general(disease_date: DiseaseData):
+    chatbotModel = data['chatbotModel']
 
-#     answer = clearHistory(user_id, client)
+    plant_name = disease_date.plantName
+    disease_name = disease_date.diseaseName 
+    user_id = disease_date.user_id
+
+    # clear chat history before getting the cure
+    chatbotModel.clear_history(user_id)
     
-#     return answer
+    answer = chatbotGetCure(plant_name, disease_name, user_id, chatbotModel)
+    
+    return answer
+
+class ClearData(BaseModel):
+    user_id: str
+
+@app.post('/chatbot/clear-history')
+async def clear_history_route(clearData: ClearData):
+    chatbotModel = data['chatbotModel']
+
+    user_id = clearData.user_id
+
+    return chatbotModel.clear_history(user_id)

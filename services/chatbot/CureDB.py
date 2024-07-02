@@ -61,7 +61,7 @@ class CureDB:
 
         return sum_text, self.__calcTokens(sum_text)
 
-    def getCureDocs(self, plantName: str, diseaseName: str, noDocs=1):
+    def getCureDocsFromPinecone(self, plantName: str, diseaseName: str, noDocs=1):
         if diseaseName == "healthy":
             return (
                 "",

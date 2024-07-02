@@ -10,7 +10,6 @@ class ChatbotModel:
     def __init__(self):
         self.__init_mongo()
 
-
     def __init_mongo(self) -> MongoClient | None:
         connection_str = os.getenv('MONGO_CONNECTION_STR')
         self.client = MongoClient(connection_str)
@@ -84,13 +83,13 @@ class ChatbotModel:
 
     def clear_history(self, user_id: str):
         collection = self.db['ChatHistory']
-
-        filter_criteria = {"userId": user_id}
+        
+        filter_criteria = {"userId": ObjectId(user_id)}
         res = collection.delete_one(filter_criteria)
 
         if res.deleted_count == 1:
-            print("Document deleted successfully.")
+            return "Document deleted successfully"
         else:
-            print("No matching document found.")
+            return "No matching document found."
         
 
