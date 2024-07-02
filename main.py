@@ -15,7 +15,10 @@ async def lifespan(app: FastAPI):
     data.clear()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    docs_url="/chatbot/docs",
+    lifespan=lifespan
+)
 
 class UserData(BaseModel):
     user_id: str
