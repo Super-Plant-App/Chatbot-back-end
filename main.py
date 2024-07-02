@@ -21,11 +21,11 @@ class UserData(BaseModel):
     user_id: str
     user_question: str
 
-@app.get('/')
+@app.get('/chatbot')
 def home():
     return "Chatbot home page"
 
-@app.post('/ask-question')
+@app.post('/chatbot/ask-question')
 async def chatbot_general(user_data: UserData):
     chatbotModel = data['chatbotModel']
 
@@ -41,7 +41,7 @@ class DiseaseData(BaseModel):
     diseaseName: str
     user_id: str
 
-@app.post('/get-cure')
+@app.post('/chatbot/get-cure')
 async def chatbot_general(disease_date: DiseaseData):
     chatbotModel = data['chatbotModel']
 
@@ -59,7 +59,7 @@ async def chatbot_general(disease_date: DiseaseData):
 class ClearData(BaseModel):
     user_id: str
 
-@app.post('/clear-history')
+@app.post('/chatbot/clear-history')
 async def clear_history_route(clearData: ClearData):
     chatbotModel = data['chatbotModel']
 
