@@ -21,6 +21,10 @@ class UserData(BaseModel):
     user_id: str
     user_question: str
 
+@app.get('/')
+def home():
+    return "Chatbot home page"
+
 @app.post('/ask-question')
 async def chatbot_general(user_data: UserData):
     chatbotModel = data['chatbotModel']
