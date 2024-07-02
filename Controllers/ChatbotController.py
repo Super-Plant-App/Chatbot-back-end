@@ -1,4 +1,4 @@
-from langchain.chains.llm import LLMChain
+# from langchain.chains.llm import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import OpenAI, ChatOpenAI
