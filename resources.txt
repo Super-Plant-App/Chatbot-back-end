@@ -1,0 +1,2 @@
+FastAPI project template:
+https://github.com/tiangolo/full-stack-fastapi-template/tree/master/backend
