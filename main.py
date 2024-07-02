@@ -17,6 +17,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     docs_url="/chatbot/docs",
+    redoc_url=None,
     lifespan=lifespan
 )
 
