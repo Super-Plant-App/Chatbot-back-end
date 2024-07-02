@@ -1,4 +1,4 @@
-# from pydantic import BaseModel
+from pydantic import BaseModel
 from services.chatbot.generaleQuestion import chatbotAskQuestion, chatbotGetCure
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-class UserData():
+class UserData(BaseModel):
     user_id: str
     user_question: str
 
@@ -32,7 +32,7 @@ async def chatbot_general(user_data: UserData):
     
     return answer
 
-class DiseaseData():
+class DiseaseData(BaseModel):
     plantName: str
     diseaseName: str
     user_id: str
@@ -52,7 +52,7 @@ async def chatbot_general(disease_date: DiseaseData):
     
     return answer
 
-class ClearData():
+class ClearData(BaseModel):
     user_id: str
 
 @app.post('/clear-history')
