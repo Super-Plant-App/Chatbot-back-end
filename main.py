@@ -40,7 +40,7 @@ async def chatbot_general(user_data: UserData):
     
     answer = chatbotAskQuestion(user_question, user_id, chatbotModel)
     
-    return answer[1:-1]
+    return answer
 
 class DiseaseData(BaseModel):
     plantName: str
@@ -61,7 +61,7 @@ async def chatbot_general(disease_date: DiseaseData):
     
     answer = chatbotGetCure(plant_name, disease_name, user_id, chatbotModel)
     
-    return answer[1:-1]
+    return answer
 
 # class ClearData(BaseModel):
     # user_id: str
