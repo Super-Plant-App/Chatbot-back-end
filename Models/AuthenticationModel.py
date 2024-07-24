@@ -1,6 +1,4 @@
 from pymongo.mongo_client import MongoClient
-from bson.objectid import ObjectId
-from datetime import datetime, timedelta
 import os
 import dotenv
 
@@ -21,10 +19,6 @@ class AuthModel():
             db_name = os.getenv('MONGO_CONNECTION_DB')
             self.db = self.client[db_name]
 
-            # Create an index for the ChatHistory collection to delete after some time
-            # print(self.db['ChatHistory'].create_index( { "expireAt": 1 }, { "expireAfterSeconds": 0 }))
-            self.db['Users'].create_index('expire', expireAfterSeconds=0)
-
         except Exception as e:
             print(f"Error init mongo: {e}")
     
@@ -35,9 +29,9 @@ class AuthModel():
         user = collection.find_one(query)
 
         if user:
-            return user._id
+            return str(user['_id'])
         else:
-            return None
+            return "Wrong Credentials"
 
     def signup(self, email: str, password: str) -> str | None:
         collection = self.db['Users']
@@ -49,9 +43,9 @@ class AuthModel():
             return "User Already Exists"
         else:
             query = {"email": email.strip(), "password": password.strip()}
-            user = collection.create_index(query)
+            user = collection.insert_one(query)
 
             if user:
-                return user._id
+                return str(user.inserted_id)
             else:
-                return None
+                return "User Already Exists"

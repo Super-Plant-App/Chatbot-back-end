@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from services.chatbot.generaleQuestion import chatbotAskQuestion, chatbotGetCure
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from contextlib import asynccontextmanager
 from Models.ChatbotModel import ChatbotModel
 from Models.AuthenticationModel import AuthModel
@@ -82,7 +82,7 @@ class UserData(BaseModel):
     password: str
 
 @app.post('/api/login')
-async def login_route(user_data: UserData):
+def login_route(user_data: UserData):
     try:
         # take the email and password
         email = user_data.email
@@ -92,15 +92,20 @@ async def login_route(user_data: UserData):
         authModel = data['authModel']
 
         res = authModel.login(email, password)
+
+        if res == "Wrong Credentials":
+            raise HTTPException(status_code=401, detail=res)
+        else:
+            return res
         
-        return res
     except Exception as e:
         print(f"Error in Login: {e}")
-        return {"message": "Error in Login"}
+        raise HTTPException(status_code=500, detail=f"Error in Login")
+    print(res)
    
 
 @app.post('/api/signup')
-async def signup_route(user_data: UserData):
+def signup_route(user_data: UserData):
    
     try:
         # take the email and password
@@ -112,18 +117,20 @@ async def signup_route(user_data: UserData):
 
         res = authModel.signup(email, password)
         
-        return res
+        if res == "User Already Exists":
+            raise HTTPException(status_code=401, detail=res)
+        else:
+            return res
     except Exception as e:
         print(f"Error in SignUp: {e}")
-        return {"message": "Error in SignUp"}
+        raise HTTPException(status_code=500, detail=f"Error in SignUp")
 
-class HistoryData(BaseModel):
-    user_id: str
 
-@app.get('/api/history')
-async def history_route(history_data: HistoryData):
-    # takes the user id
-    user_id = history_data.user_id
-    # return the user history
-    # todo: search for a way to store the user scan
-    pass
+# @app.get('/api/history')
+# async def history_route(history_data: HistoryData):
+#     # takes the user id
+#     user_id = history_data.user_id
+#     # return the user history
+
+#     # todo: search for a way to store the user scan
+#     pass
