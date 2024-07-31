@@ -24,7 +24,7 @@ app = FastAPI(
 )
 
 class UserQuestion(BaseModel):
-    user_id: str | None
+    user_id: str | None = None
     user_question: str
 
 @app.get('/chatbot')
@@ -48,7 +48,7 @@ async def chatbot_general(user_data: UserQuestion):
 class DiseaseData(BaseModel):
     plantName: str
     diseaseName: str
-    user_id: str | None
+    user_id: str | None = None
 
 @app.post('/chatbot/get-cure')
 async def chatbot_general(disease_date: DiseaseData):
@@ -69,7 +69,7 @@ async def chatbot_general(disease_date: DiseaseData):
     return answer
 
 class ClearData(BaseModel):
-    user_id: str | None
+    user_id: str | None = None
 
 @app.post('/chatbot/clear-history')
 async def clear_history_route(clearData: ClearData):
