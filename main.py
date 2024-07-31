@@ -127,13 +127,3 @@ def signup_route(user_data: UserData):
     except Exception as e:
         print(f"Error in SignUp: {e}")
         raise HTTPException(status_code=500, detail=f"Error in SignUp")
-
-
-# @app.get('/api/history')
-# async def history_route(history_data: HistoryData):
-#     # takes the user id
-#     user_id = history_data.user_id
-#     # return the user history
-
-#     # todo: search for a way to store the user scan
-#     pass
