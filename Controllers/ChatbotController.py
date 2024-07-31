@@ -159,8 +159,10 @@ class ChatBotController:
     def plantDisease(self, user_question):
         messages = self.__load_chat_history()
 
+        translated_question = self.translateQuestion(user_question)
+
         cure = CureDB()
-        relatedDocs, _ = cure.getCureDocsFromPinecone(user_question)
+        relatedDocs, _ = cure.getCureDocsFromPinecone(translated_question)
 
         aiAnswer, messages = self.__getDiseaseAnswer(relatedDocs, messages, user_question=user_question)
 
