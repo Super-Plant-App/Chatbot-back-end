@@ -133,7 +133,7 @@ class ChatBotController:
     def __getDiseaseAnswer(self, relatedDocs, messages, user_question=None, plantName=None, diseaseName=None):
         chat = ChatOpenAI(temperature=0)
         
-        if user_question is not None:
+        if user_question is None:
             messages += [
                 SystemMessage(
                     content=f"""
