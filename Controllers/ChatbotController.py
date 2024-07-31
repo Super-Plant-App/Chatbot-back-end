@@ -59,6 +59,17 @@ class ChatBotController:
             HumanMessage(content=user_question),
         ]
 
+        # messages = [
+        #     SystemMessage(
+        #         content=f"""You are a plant assistant. Your task is to categorize user questions into one of the following categories: ["plant question", "plant disease"].
+        #         Choose "plant question" if the message is asking anything about plants.
+        #         Choose "plant disease" if the message is specifically asking about a disease of a plant and provoided both disease name and plant name.
+        #         Please return only the category as a string, such as 'plant question'.
+        #     """
+        #     ),
+        #     HumanMessage(content=user_question),
+        # ]
+
         classification = chat(messages).content
 
         return classification
@@ -94,48 +105,67 @@ class ChatBotController:
                 How can I assist you with this categories : ["general question", "plant disease", "other"]
                 """
 
-    def __getPlantAndDiseaseNames(self, user_question):
-        model = OpenAI(model_name="gpt-3.5-turbo", temperature=0.0, max_tokens=10000)
+    # def __getPlantAndDiseaseNames(self, user_question):
+    #     model = OpenAI(model_name="gpt-3.5-turbo", temperature=0.0, max_tokens=10000)
 
-        # Define your desired data structure.
-        class Disease(BaseModel):
-            plant: str = Field(description="name of the plant")
-            disease: str = Field(description="disease of the plant")
+    #     # Define your desired data structure.
+    #     class Disease(BaseModel):
+    #         plant: str = Field(description="name of the plant")
+    #         disease: str = Field(description="disease of the plant")
 
 
-        # Set up a parser + inject instructions into the prompt template.
-        parser = PydanticOutputParser(pydantic_object=Disease)
+    #     # Set up a parser + inject instructions into the prompt template.
+    #     parser = PydanticOutputParser(pydantic_object=Disease)
 
-        prompt = PromptTemplate(
-            template="Extract the plant name and disease name from the query.\n{format_instructions}\n{query}\n",
-            input_variables=["query"],
-            partial_variables={"format_instructions": parser.get_format_instructions()},
-        )
+    #     prompt = PromptTemplate(
+    #         template="Extract the plant name and disease name from the query.\n{format_instructions}\n{query}\n",
+    #         input_variables=["query"],
+    #         partial_variables={"format_instructions": parser.get_format_instructions()},
+    #     )
 
-        # And a query intended to prompt a language model to populate the data structure.
-        prompt_and_model = prompt | model
-        output = prompt_and_model.invoke({"query": user_question}) # todo: here is the error
-        res = parser.invoke(output)
+    #     # And a query intended to prompt a language model to populate the data structure.
+    #     prompt_and_model = prompt | model
+    #     output = prompt_and_model.invoke({"query": user_question}) # todo: here is the error
+    #     res = parser.invoke(output)
 
-        return res
+    #     return res
     
-    def __getDiseaseAnswer(self, relatedDocs, messages, user_question):
+    def __getDiseaseAnswer(self, relatedDocs, messages, user_question=None, plantName=None, diseaseName=None):
         chat = ChatOpenAI(temperature=0)
         
-        messages += [
-            SystemMessage(
-                content=f"""
+        if user_question is not None:
+            messages += [
+                SystemMessage(
+                    content=f"""
                         You are a helpful AI Plant assistant that answers the questions about Plants and its fields.
                         You can use Docs to answer the question of user, it is optional to use it
 
-                        *** 
+                        ***
                         Docs:
                         {relatedDocs}
-
+                    """
+                ),
+                HumanMessage(
+                    content=f"""
+                        What is the cure of {plantName} plant with {diseaseName} disease 
                         """
-            ),
-            HumanMessage(content=user_question)
-        ]
+                )
+            ]
+        else:
+            messages += [
+                SystemMessage(
+                    content=f"""
+                            You are a helpful AI Plant assistant that answers the questions about Plants and its fields.
+                            You can use Docs to answer the question of user, it is optional to use it
+
+                            *** 
+                            Docs:
+                            {relatedDocs}
+
+                            """
+                ),
+                HumanMessage(content=user_question)
+            ]
 
         aiAnswer = chat(messages).content
 
@@ -149,7 +179,7 @@ class ChatBotController:
         cure = CureDB()
         relatedDocs, _ = cure.getCureDocsFromPinecone(user_question)
 
-        aiAnswer, messages = self.__getDiseaseAnswer(relatedDocs, messages, user_question)
+        aiAnswer, messages = self.__getDiseaseAnswer(relatedDocs, messages, user_question=user_question)
 
         # remove the template prompt from the messages
         messages.pop(-3)
@@ -211,7 +241,7 @@ class ChatBotController:
         cure = CureDB()
         relatedDocs, _ = cure.getCureDocsFromPinecone(plantName, diseaseName)
 
-        aiAnswer, messages = self.__getDiseaseAnswer(relatedDocs, plantName, diseaseName, messages, user_question="")
+        aiAnswer, messages = self.__getDiseaseAnswer(relatedDocs, messages, plantName=plantName, diseaseName=diseaseName)
 
         # remove the template prompt from the messages
         messages.pop(-3)
