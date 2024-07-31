@@ -59,17 +59,6 @@ class ChatBotController:
             HumanMessage(content=user_question),
         ]
 
-        # messages = [
-        #     SystemMessage(
-        #         content=f"""You are a plant assistant. Your task is to categorize user questions into one of the following categories: ["plant question", "plant disease"].
-        #         Choose "plant question" if the message is asking anything about plants.
-        #         Choose "plant disease" if the message is specifically asking about a disease of a plant and provoided both disease name and plant name.
-        #         Please return only the category as a string, such as 'plant question'.
-        #     """
-        #     ),
-        #     HumanMessage(content=user_question),
-        # ]
-
         classification = chat(messages).content
 
         return classification
@@ -133,26 +122,6 @@ class ChatBotController:
     def __getDiseaseAnswer(self, relatedDocs, messages, user_question):
         chat = ChatOpenAI(temperature=0)
         
-        # if user_question == "":
-        #     messages += [
-        #         SystemMessage(
-        #             content=f"""
-        #                 You are a helpful AI Plant assistant that answers the questions about Plants and its fields.
-        #                 The user will ask a question about plants and diseases and will give some documents that MIGHT help you.
-        #             """
-        #         ),
-        #         HumanMessage(
-        #             content=f"""
-        #                 User Question:
-        #                 {user_question}
-
-        #                 ***
-        #                 Docs:
-        #                 {relatedDocs}
-        #                 """
-        #         )
-        #     ]
-        # else:
         messages += [
             SystemMessage(
                 content=f"""
@@ -176,11 +145,6 @@ class ChatBotController:
 
     def plantDisease(self, user_question):
         messages = self.__load_chat_history()
-
-        # get the plant name and disease name from the user_question
-        # data = self.__getPlantAndDiseaseNames(user_question)
-        # plantName = data.plant
-        # diseaseName = data.disease
 
         cure = CureDB()
         relatedDocs, _ = cure.getCureDocsFromPinecone(user_question)
