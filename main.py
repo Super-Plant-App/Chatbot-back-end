@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from services.chatbot.generaleQuestion import chatbotAskQuestion, chatbotGetCure
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, responses
 from contextlib import asynccontextmanager
 from Models.ChatbotModel import ChatbotModel
 from Models.AuthenticationModel import AuthModel
@@ -43,7 +43,7 @@ async def chatbot_general(user_data: UserQuestion):
     
     answer = chatbotAskQuestion(user_question, user_id, chatbotModel)
     
-    return answer
+    return responses.JSONResponse(content={'text': answer})
 
 class DiseaseData(BaseModel):
     plantName: str
@@ -66,7 +66,7 @@ async def chatbot_general(disease_date: DiseaseData):
     
     answer = chatbotGetCure(plant_name, disease_name, user_id, chatbotModel)
     
-    return answer
+    return responses.JSONResponse(content={"text": answer})
 
 class ClearData(BaseModel):
     user_id: str | None = None
