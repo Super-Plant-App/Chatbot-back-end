@@ -208,7 +208,7 @@ class ChatBotController:
 
     def chat(self, user_question: str):
         # translate the question to english first
-        user_question = self.translateQuestion(user_question)
+        # user_question = self.translateQuestion(user_question)
 
         question_type = self.classifyQuestion(user_question)
 
