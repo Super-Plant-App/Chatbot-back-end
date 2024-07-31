@@ -59,17 +59,6 @@ class ChatBotController:
             HumanMessage(content=user_question),
         ]
 
-        # messages = [
-        #     SystemMessage(
-        #         content=f"""You are a plant assistant. Your task is to categorize user questions into one of the following categories: ["plant question", "plant disease"].
-        #         Choose "plant question" if the message is asking anything about plants.
-        #         Choose "plant disease" if the message is specifically asking about a disease of a plant and provoided both disease name and plant name.
-        #         Please return only the category as a string, such as 'plant question'.
-        #     """
-        #     ),
-        #     HumanMessage(content=user_question),
-        # ]
-
         classification = chat(messages).content
 
         return classification
@@ -105,30 +94,24 @@ class ChatBotController:
                 How can I assist you with this categories : ["general question", "plant disease", "other"]
                 """
 
-    # def __getPlantAndDiseaseNames(self, user_question):
-    #     model = OpenAI(model_name="gpt-3.5-turbo", temperature=0.0, max_tokens=10000)
+    def translateQuestion(self, user_message):
+        chat = ChatOpenAI(temperature=0)
 
-    #     # Define your desired data structure.
-    #     class Disease(BaseModel):
-    #         plant: str = Field(description="name of the plant")
-    #         disease: str = Field(description="disease of the plant")
+        messages = [
+            SystemMessage(
+                content=f"""
+                    You have only one task, tranlsate the user's message to English.
+                    If the user's message is in English return the same message.
+                """
+            ),
+            HumanMessage(
+                content=user_message
+            )
+        ]
 
+        aiAnswer = chat(messages).content
 
-    #     # Set up a parser + inject instructions into the prompt template.
-    #     parser = PydanticOutputParser(pydantic_object=Disease)
-
-    #     prompt = PromptTemplate(
-    #         template="Extract the plant name and disease name from the query.\n{format_instructions}\n{query}\n",
-    #         input_variables=["query"],
-    #         partial_variables={"format_instructions": parser.get_format_instructions()},
-    #     )
-
-    #     # And a query intended to prompt a language model to populate the data structure.
-    #     prompt_and_model = prompt | model
-    #     output = prompt_and_model.invoke({"query": user_question}) # todo: here is the error
-    #     res = parser.invoke(output)
-
-    #     return res
+        return aiAnswer
     
     def __getDiseaseAnswer(self, relatedDocs, messages, user_question=None, plantName=None, diseaseName=None):
         chat = ChatOpenAI(temperature=0)
@@ -224,6 +207,9 @@ class ChatBotController:
     """
 
     def chat(self, user_question: str):
+        # translate the question to english first
+        user_question = self.translateQuestion(user_question)
+
         question_type = self.classifyQuestion(user_question)
 
         if question_type == "general question":
