@@ -61,17 +61,10 @@ class CureDB:
 
         return sum_text, self.__calcTokens(sum_text)
 
-    def getCureDocsFromPinecone(self, plantName: str, diseaseName: str, noDocs=1):
-        if diseaseName == "healthy":
-            return (
-                "",
-                True,
-                0,
-            )
-
+    def getCureDocsFromPinecone(self, user_question: str, noDocs=1):
         # get Word Embeddings
-        query = f"{plantName} plant Managment of {diseaseName} disease?"
-        query_vec = self.__getEmbeddings(query)
+        # query = f"{plantName} plant Managment of {diseaseName} disease?"
+        query_vec = self.__getEmbeddings(user_question)
 
         # Initilalize pinecone
         _, pinecone_index = self.__initPinecone()

@@ -48,27 +48,27 @@ class ChatBotController:
     def classifyQuestion(self, user_question) -> str:
         chat = ChatOpenAI(temperature=0)
         
-        # messages = [
-        #     SystemMessage(
-        #         content=f"""You are a plant assistant. Your task is to categorize user questions into one of the following categories: ["general question", "plant disease"].
-        #         Choose "general question" if the message is asking anything about plants.
-        #         Choose "plant disease" if the message is specifically asking about a disease of a plant and provoided both disease name and plant name.
-        #         Please return only the category as a string, such as 'general question'.
-        #     """
-        #     ),
-        #     HumanMessage(content=user_question),
-        # ]
-
         messages = [
             SystemMessage(
-                content=f"""You are a plant assistant. Your task is to categorize user questions into one of the following categories: ["plant question", "plant disease"].
-                Choose "plant question" if the message is asking anything about plants.
+                content=f"""You are a plant assistant. Your task is to categorize user questions into one of the following categories: ["general question", "plant disease"].
+                Choose "general question" if the message is asking anything about plants.
                 Choose "plant disease" if the message is specifically asking about a disease of a plant and provoided both disease name and plant name.
-                Please return only the category as a string, such as 'plant question'.
+                Please return only the category as a string, such as 'general question'.
             """
             ),
             HumanMessage(content=user_question),
         ]
+
+        # messages = [
+        #     SystemMessage(
+        #         content=f"""You are a plant assistant. Your task is to categorize user questions into one of the following categories: ["plant question", "plant disease"].
+        #         Choose "plant question" if the message is asking anything about plants.
+        #         Choose "plant disease" if the message is specifically asking about a disease of a plant and provoided both disease name and plant name.
+        #         Please return only the category as a string, such as 'plant question'.
+        #     """
+        #     ),
+        #     HumanMessage(content=user_question),
+        # ]
 
         classification = chat(messages).content
 
@@ -102,7 +102,7 @@ class ChatBotController:
     def other(self):
         return """
                 Sorry, I'm an AI plant assistant. 
-                How can I assist you with this categories : ["plant question", "plant disease", "other"]
+                How can I assist you with this categories : ["general question", "plant disease", "other"]
                 """
 
     def __getPlantAndDiseaseNames(self, user_question):
@@ -130,45 +130,43 @@ class ChatBotController:
 
         return res
     
-    def __getDiseaseAnswer(self, relatedDocs, plantName, diseaseName, messages, user_question):
+    def __getDiseaseAnswer(self, relatedDocs, messages, user_question):
         chat = ChatOpenAI(temperature=0)
         
-        if user_question == "":
-            messages += [
-                SystemMessage(
-                    content=f"""
-                        You are a helpful AI Plant assistant that answers the questions about Plants and its fields.
-                    """
-                ),
-                HumanMessage(
-                    content=f"""
-                        What is the cure for {plantName} plants infected with {diseaseName} disease?
-                        Make your answer simple and short for people who don't know much about plants
-                        You are given a number of documents, use them to make a suitable treatment.
-                        If you find the documents talks about different plant name or disease Name, use your own knowledge
+        # if user_question == "":
+        #     messages += [
+        #         SystemMessage(
+        #             content=f"""
+        #                 You are a helpful AI Plant assistant that answers the questions about Plants and its fields.
+        #                 The user will ask a question about plants and diseases and will give some documents that MIGHT help you.
+        #             """
+        #         ),
+        #         HumanMessage(
+        #             content=f"""
+        #                 User Question:
+        #                 {user_question}
 
-                        ***
+        #                 ***
+        #                 Docs:
+        #                 {relatedDocs}
+        #                 """
+        #         )
+        #     ]
+        # else:
+        messages += [
+            SystemMessage(
+                content=f"""
+                        You are a helpful AI Plant assistant that answers the questions about Plants and its fields.
+                        You can use Docs to answer the question of user, it is optional to use it
+
+                        *** 
                         Docs:
                         {relatedDocs}
+
                         """
-                )
-            ]
-        else:
-            messages += [
-                SystemMessage(
-                    content=f"""
-                            You are a helpful AI Plant assistant that answers the questions about Plants and its fields.
-                            The user is taking about {plantName} plant and {diseaseName} disease.
-                            You can use Docs to answer the question of user, it is optional to use it
-
-                            *** 
-                            Docs:
-                            {relatedDocs}
-
-                            """
-                ),
-                HumanMessage(content=user_question)
-            ]
+            ),
+            HumanMessage(content=user_question)
+        ]
 
         aiAnswer = chat(messages).content
 
@@ -180,14 +178,14 @@ class ChatBotController:
         messages = self.__load_chat_history()
 
         # get the plant name and disease name from the user_question
-        data = self.__getPlantAndDiseaseNames(user_question)
-        plantName = data.plant
-        diseaseName = data.disease
+        # data = self.__getPlantAndDiseaseNames(user_question)
+        # plantName = data.plant
+        # diseaseName = data.disease
 
         cure = CureDB()
-        relatedDocs, _ = cure.getCureDocsFromPinecone(plantName, diseaseName)
+        relatedDocs, _ = cure.getCureDocsFromPinecone(user_question)
 
-        aiAnswer, messages = self.__getDiseaseAnswer(relatedDocs, plantName, diseaseName, messages, user_question)
+        aiAnswer, messages = self.__getDiseaseAnswer(relatedDocs, messages, user_question)
 
         # remove the template prompt from the messages
         messages.pop(-3)
@@ -234,14 +232,14 @@ class ChatBotController:
     def chat(self, user_question: str):
         question_type = self.classifyQuestion(user_question)
 
-        if question_type == "plant question":
+        if question_type == "general question":
             return self.generalQuestion(user_question)
         elif question_type == "plant disease":
             return self.plantDisease(user_question)
         elif question_type == "other":
             return self.other()
         else:
-            return "Sorry, I'm an AI plant assistant. How can I assist you with this categories : plant question, plant disease, other"
+            return "Sorry, I'm an AI plant assistant. How can I assist you with this categories : general question, plant disease, other"
 
     def getCure(self, plantName: str, diseaseName: str):
         messages = self.__load_chat_history()
