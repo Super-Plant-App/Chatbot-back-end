@@ -69,14 +69,14 @@ async def chatbot_general(disease_date: DiseaseData):
     return answer
 
 class ClearData(BaseModel):
-    user_id: str | None = ""
+    user_id: str | None = None
 
 @app.post('/chatbot/clear-history')
 async def clear_history_route(clearData: ClearData):
     chatbotModel = data['chatbotModel']
 
     user_id = clearData.user_id
-    if user_id == "":
+    if user_id is None:
         user_id = "665f995565bb190409468564" # guest id
 
     return chatbotModel.clear_history(user_id)
