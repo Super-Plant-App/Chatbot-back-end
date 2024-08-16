@@ -36,6 +36,8 @@ A chatbot application that utilizes the ChatGPT API, Pinecone, LangChain, and Fa
 
 ## Demo
 
+- [Demo](https://drive.google.com/drive/folders/1UBksGsBc8DLASM8pdX3aj-q2Nd_9mbv1?usp=sharing)
+
 ## Contributors
 
 - [Yasser Emam](https://github.com/y-emam)
