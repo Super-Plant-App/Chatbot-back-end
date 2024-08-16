@@ -23,6 +23,8 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+MONOG_GUEST_ID = "665f995565bb190409468564"
+
 class UserQuestion(BaseModel):
     user_id: str | None = None
     user_question: str
@@ -39,7 +41,7 @@ async def chatbot_general(user_data: UserQuestion):
     user_id = user_data.user_id
 
     if user_id is None:
-        user_id = "665f995565bb190409468564" # guest id
+        user_id = MONOG_GUEST_ID # guest id
     
     answer = chatbotAskQuestion(user_question, user_id, chatbotModel)
     
@@ -59,7 +61,7 @@ async def chatbot_general(disease_date: DiseaseData):
 
     user_id = disease_date.user_id
     if user_id is None:
-        user_id = "665f995565bb190409468564" # guest id
+        user_id = MONOG_GUEST_ID # guest id
 
     # clear chat history before getting the cure
     chatbotModel.clear_history(user_id)
@@ -77,7 +79,7 @@ async def clear_history_route(clearData: ClearData):
 
     user_id = clearData.user_id
     if user_id is None:
-        user_id = "665f995565bb190409468564" # guest id
+        user_id = MONOG_GUEST_ID # guest id
 
     return chatbotModel.clear_history(user_id)
 
